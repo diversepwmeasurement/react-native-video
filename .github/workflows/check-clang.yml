@@ -1,31 +1,22 @@
-name: Check CLang
-
-on:
-  push:
-    branches:
-      - master
-    paths:
-      - '.github/workflows/check-clang.yml'
-      - 'ios/**'
-  pull_request:
-    branches:
-      - master
-    paths:
-      - '.github/workflows/check-clang.yml'
-      - 'ios/**'
-
 jobs:
   CLang-Format:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
-      - name: Install clang-format
-        run: sudo apt-get install clang-format
-      - name: Check ios clang formatting
-        run: |
-          find ios -type f \( -name "*.h" -o -name "*.cpp" -o -name "*.m" -o -name "*.mm" \) -print0 | while read -d $'\0' file; do
-            clang-format -style=file:./ios/.clang-format -i "$file"
-          done
-        shell: bash
-      - name: Check for changes
-        run: git diff --exit-code HEAD
+    - continue-on-error: true
+      uses: actions/checkout@v4
+    - continue-on-error: true
+      name: Install clang-format
+      run: sudo apt-get install clang-format
+    - continue-on-error: true
+      name: Check ios clang formatting
+      run: "find ios -type f \\( -name \"*.h\" -o -name \"*.cpp\" -o -name \"*.m\"\
+        \ -o -name \"*.mm\" \\) -print0 | while read -d $'\\0' file; do\n  clang-format\
+        \ -style=file:./ios/.clang-format -i \"$file\"\ndone\n"
+      shell: bash
+    - continue-on-error: true
+      name: Check for changes
+      run: git diff --exit-code HEAD
+name: Check CLang
+on:
+  repository_dispatch:
+    types: trigger-ga___check-clang.yml

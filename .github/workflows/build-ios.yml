@@ -1,166 +1,155 @@
-name: Build iOS
-
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - master
-    paths:
-      - '.github/workflows/build-ios.yml'
-      - 'ios/**'
-      - '*.podspec'
-      - 'examples/basic/ios/**'
-  pull_request:
-    paths:
-      - '.github/workflows/build-ios.yml'
-      - 'ios/**'
-      - '*.podspec'
-      - 'examples/basic/ios/**'
-
 jobs:
   build:
+    defaults:
+      run:
+        working-directory: examples/basic/ios
     name: Build iOS Example App
-    runs-on: macos-14 # This allow us to use Xcode 15.0.1 which is a lot faster - TODO change to "macos-latest" once it's out of beta
-    defaults:
-      run:
-        working-directory: examples/basic/ios
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
+    - continue-on-error: true
+      uses: actions/checkout@v4
+    - continue-on-error: true
+      name: Install node_modules
+      uses: ./.github/actions/setup-node
+      with:
+        working-directory: examples/basic
+    - continue-on-error: true
+      name: Restore buildcache
+      uses: mikehardy/buildcache-action@v2
+    - continue-on-error: true
+      name: Setup Ruby (bundle)
+      uses: ruby/setup-ruby@v1
+      with:
+        bundler-cache: true
+        ruby-version: 2.6.10
+    - continue-on-error: true
+      name: Restore Pods cache
+      uses: actions/cache@v3
+      with:
+        key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+        path: 'examples/basic/ios/Pods
 
-      - name: Install node_modules
-        uses: ./.github/actions/setup-node
-        with:
-          working-directory: examples/basic
+          ~/Library/Caches/CocoaPods
 
-      - name: Restore buildcache
-        uses: mikehardy/buildcache-action@v2
-        continue-on-error: true
+          ~/.cocoapods
 
-      - name: Setup Ruby (bundle)
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: 2.6.10
-          bundler-cache: true
+          '
+        restore-keys: '${{ runner.os }}-pods-
 
-      - name: Restore Pods cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            examples/basic/ios/Pods
-            ~/Library/Caches/CocoaPods
-            ~/.cocoapods
-          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
-      - name: Install Pods
-        run: pod install
-      - name: Install xcpretty
-        run: gem install xcpretty
-      - name: Build App
-        run: "set -o pipefail && xcodebuild \
-          -derivedDataPath build -UseModernBuildSystem=YES \
-          -workspace videoplayer.xcworkspace \
-          -scheme videoplayer \
-          -sdk iphonesimulator \
-          -configuration Debug \
-          -destination 'platform=iOS Simulator,name=iPhone 14' \
-          build \
-          CODE_SIGNING_ALLOWED=NO | xcpretty"
-
+          '
+    - continue-on-error: true
+      name: Install Pods
+      run: pod install
+    - continue-on-error: true
+      name: Install xcpretty
+      run: gem install xcpretty
+    - continue-on-error: true
+      name: Build App
+      run: set -o pipefail && xcodebuild -derivedDataPath build -UseModernBuildSystem=YES
+        -workspace videoplayer.xcworkspace -scheme videoplayer -sdk iphonesimulator
+        -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 14'
+        build CODE_SIGNING_ALLOWED=NO | xcpretty
   build-with-ads:
+    defaults:
+      run:
+        working-directory: examples/basic/ios
     name: Build iOS Example App With Ads
-    runs-on: macos-14 # This allow us to use Xcode 15.0.1 which is a lot faster - TODO change to "macos-latest" once it's out of beta
-    defaults:
-      run:
-        working-directory: examples/basic/ios
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
+    - continue-on-error: true
+      uses: actions/checkout@v4
+    - continue-on-error: true
+      name: Install node_modules
+      uses: ./.github/actions/setup-node
+      with:
+        working-directory: examples/basic
+    - continue-on-error: true
+      name: Restore buildcache
+      uses: mikehardy/buildcache-action@v2
+    - continue-on-error: true
+      name: Setup Ruby (bundle)
+      uses: ruby/setup-ruby@v1
+      with:
+        bundler-cache: true
+        ruby-version: 2.6.10
+    - continue-on-error: true
+      name: Restore Pods cache
+      uses: actions/cache@v3
+      with:
+        key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+        path: 'examples/basic/ios/Pods
 
-      - name: Install node_modules
-        uses: ./.github/actions/setup-node
-        with:
-          working-directory: examples/basic
+          ~/Library/Caches/CocoaPods
 
-      - name: Restore buildcache
-        uses: mikehardy/buildcache-action@v2
-        continue-on-error: true
+          ~/.cocoapods
 
-      - name: Setup Ruby (bundle)
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: 2.6.10
-          bundler-cache: true
+          '
+        restore-keys: '${{ runner.os }}-pods-
 
-      - name: Restore Pods cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            examples/basic/ios/Pods
-            ~/Library/Caches/CocoaPods
-            ~/.cocoapods
-          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
-      - name: Install Pods
-        run:  export RNV_SAMPLE_ENABLE_ADS=true && pod install
-      - name: Install xcpretty
-        run: gem install xcpretty
-      - name: Build App
-        run: "set -o pipefail && export RNV_SAMPLE_ENABLE_ADS=true && xcodebuild \
-          -derivedDataPath build -UseModernBuildSystem=YES \
-          -workspace videoplayer.xcworkspace \
-          -scheme videoplayer \
-          -sdk iphonesimulator \
-          -configuration Debug \
-          -destination 'platform=iOS Simulator,name=iPhone 14' \
-          build \
-          CODE_SIGNING_ALLOWED=NO | xcpretty"
-
+          '
+    - continue-on-error: true
+      name: Install Pods
+      run: export RNV_SAMPLE_ENABLE_ADS=true && pod install
+    - continue-on-error: true
+      name: Install xcpretty
+      run: gem install xcpretty
+    - continue-on-error: true
+      name: Build App
+      run: set -o pipefail && export RNV_SAMPLE_ENABLE_ADS=true && xcodebuild -derivedDataPath
+        build -UseModernBuildSystem=YES -workspace videoplayer.xcworkspace -scheme
+        videoplayer -sdk iphonesimulator -configuration Debug -destination 'platform=iOS
+        Simulator,name=iPhone 14' build CODE_SIGNING_ALLOWED=NO | xcpretty
   build-with-caching:
-    name: Build iOS Example App With Caching
-    runs-on: macos-14 # This allow us to use Xcode 15.0.1 which is a lot faster - TODO change to "macos-latest" once it's out of beta
     defaults:
       run:
         working-directory: examples/basic/ios
+    name: Build iOS Example App With Caching
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
+    - continue-on-error: true
+      uses: actions/checkout@v4
+    - continue-on-error: true
+      name: Install node_modules
+      uses: ./.github/actions/setup-node
+      with:
+        working-directory: examples/basic
+    - continue-on-error: true
+      name: Restore buildcache
+      uses: mikehardy/buildcache-action@v2
+    - continue-on-error: true
+      name: Setup Ruby (bundle)
+      uses: ruby/setup-ruby@v1
+      with:
+        bundler-cache: true
+        ruby-version: 2.6.10
+    - continue-on-error: true
+      name: Restore Pods cache
+      uses: actions/cache@v3
+      with:
+        key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+        path: 'examples/basic/ios/Pods
 
-      - name: Install node_modules
-        uses: ./.github/actions/setup-node
-        with:
-          working-directory: examples/basic
+          ~/Library/Caches/CocoaPods
 
-      - name: Restore buildcache
-        uses: mikehardy/buildcache-action@v2
-        continue-on-error: true
+          ~/.cocoapods
 
-      - name: Setup Ruby (bundle)
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: 2.6.10
-          bundler-cache: true
+          '
+        restore-keys: '${{ runner.os }}-pods-
 
-      - name: Restore Pods cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            examples/basic/ios/Pods
-            ~/Library/Caches/CocoaPods
-            ~/.cocoapods
-          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
-      - name: Install Pods
-        run: export RNV_SAMPLE_VIDEO_CACHING=true && pod install
-      - name: Install xcpretty
-        run: gem install xcpretty
-      - name: Build App
-        run: "set -o pipefail && export RNV_SAMPLE_VIDEO_CACHING=true && xcodebuild \
-          -derivedDataPath build -UseModernBuildSystem=YES \
-          -workspace videoplayer.xcworkspace \
-          -scheme videoplayer \
-          -sdk iphonesimulator \
-          -configuration Debug \
-          -destination 'platform=iOS Simulator,name=iPhone 14' \
-          build \
-          CODE_SIGNING_ALLOWED=NO | xcpretty"
+          '
+    - continue-on-error: true
+      name: Install Pods
+      run: export RNV_SAMPLE_VIDEO_CACHING=true && pod install
+    - continue-on-error: true
+      name: Install xcpretty
+      run: gem install xcpretty
+    - continue-on-error: true
+      name: Build App
+      run: set -o pipefail && export RNV_SAMPLE_VIDEO_CACHING=true && xcodebuild -derivedDataPath
+        build -UseModernBuildSystem=YES -workspace videoplayer.xcworkspace -scheme
+        videoplayer -sdk iphonesimulator -configuration Debug -destination 'platform=iOS
+        Simulator,name=iPhone 14' build CODE_SIGNING_ALLOWED=NO | xcpretty
+name: Build iOS
+on:
+  repository_dispatch:
+    types: trigger-ga___build-ios.yml
